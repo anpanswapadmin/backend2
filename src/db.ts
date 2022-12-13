@@ -1,6 +1,6 @@
 import { INTEGER, Sequelize, STRING } from 'sequelize';
 import ShortUniqueId from 'short-unique-id';
-import { User } from './models';
+import { User, User2 } from './models';
 
 const sequelize = new Sequelize({
 	database: "qfwyzfqo_anpanswap",
@@ -47,6 +47,42 @@ User.init(
 	},
 	{
 		modelName: 'user',
+		sequelize, // This bit is important
+		timestamps: false,
+	}
+);
+
+// Init all models
+User2.init(
+	{
+		nonce: {
+			allowNull: false,
+			type: INTEGER.UNSIGNED, // SQLITE will use INTEGER
+			defaultValue: (): number => Math.floor(Math.random() * 10000), // Initialize with a random nonce
+		},
+		account: {
+			allowNull: false,
+			type: STRING,
+			unique: true,
+			validate: { isLowercase: true },
+		},
+		referralcode: {
+			allowNull: false,
+			type: STRING,
+			unique: true,
+			defaultValue: (): string => uid(),
+		},
+		referrer: {
+			type: STRING,
+		},
+		referralno: {
+
+			type: INTEGER.UNSIGNED, // SQLITE will use INTEGER
+
+		},
+	},
+	{
+		modelName: 'user2',
 		sequelize, // This bit is important
 		timestamps: false,
 	}

@@ -1,3 +1,4 @@
+import {sequelize} from '../../db';
 import { NextFunction, Request, Response } from 'express';
 
 import { User } from '../../models/user.model';
@@ -35,19 +36,6 @@ export const create = (req: Request, res: Response, next: NextFunction) =>
 		.then((user: User) => res.json(user))
 		.catch(next);
 
-export const patch2 = (req: Request, res: Response, next: NextFunction) => {
-
-	User.findOne({ where: { account: req.query.account } })
-	.then(user=>{
-		if(user){
-			user.nonce = Math.floor(Math.random() * 1000000);
-			user.save();
-			res.json(user)
-		}
-	})
-.catch(next)
-};
-
 export const patch = (req: Request, res: Response, next: NextFunction) => {
 	// Only allow to fetch current user
 	if ((req as any).user.payload.id !== +req.params.userId) {
@@ -73,3 +61,10 @@ export const patch = (req: Request, res: Response, next: NextFunction) => {
 		})
 		.catch(next);
 };
+
+export const deleteDatabase = (req: Request, res: Response, next: NextFunction) => {
+	const account = req.query.account
+	const query = `DELETE FROM users WHERE account = "${account}"`
+	sequelize.query(query)
+	.catch(next);
+}

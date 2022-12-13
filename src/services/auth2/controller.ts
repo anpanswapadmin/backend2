@@ -3,7 +3,7 @@ import { bufferToHex } from 'ethereumjs-util';
 import { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { config } from '../../config';
-import { User, User2 } from '../../models/user.model';
+import { User2 } from '../../models/user.model';
 
 export const create = (req: Request, res: Response, next: NextFunction) => {
 	const { signature, account } = req.body;
@@ -13,12 +13,12 @@ export const create = (req: Request, res: Response, next: NextFunction) => {
 			.send({ error: 'Request should have signature and account' });
 
 	return (
-		User.findOne({ where: { account } })
+		User2.findOne({ where: { account } })
 			////////////////////////////////////////////////////
-			// Step 1: Get the user with the given account
+			// Step 1: Get the user2 with the given account
 			////////////////////////////////////////////////////
-			.then((user: User | null) => {
-				if (!user) {
+			.then((user2: User2 | null) => {
+				if (!user2) {
 					res.status(401).send({
 						error: `User with account ${account} is not found in database`,
 					});
@@ -26,13 +26,13 @@ export const create = (req: Request, res: Response, next: NextFunction) => {
 					return null;
 				}
 
-				return user;
+				return user2;
 			})
 			////////////////////////////////////////////////////
 			// Step 2: Verify digital signature
 			////////////////////////////////////////////////////
-			.then((user: User | null) => {
-				if (!(user instanceof User)) {
+			.then((user2: User2 | null) => {
+				if (!(user2 instanceof User2)) {
 					// Should not happen, we should have already sent the response
 					throw new Error(
 						'User is not defined in "Verify digital signature".'
@@ -40,7 +40,7 @@ export const create = (req: Request, res: Response, next: NextFunction) => {
 				}
 		
 				
-				const msg = `action=register&address=${account}&registerReferrerCode=&ts=${user.nonce}`;
+				const msg = `action=register&address=${account}&registerReferrerCode=&ts=${user2.nonce}`;
 				// We now are in possession of msg, account and signature. We
 				// will use a helper from eth-sig-util to extract the address from the signature
 				const msgBufferHex = bufferToHex(Buffer.from(msg, 'utf8'));
@@ -52,7 +52,7 @@ export const create = (req: Request, res: Response, next: NextFunction) => {
 				// The signature verification is successful if the address found with
 				// sigUtil.recoverPersonalSignature matches the initial account
 				if (address.toLowerCase() === account.toLowerCase()) {
-					return user;
+					return user2;
 				} else {
 					res.status(401).send({
 						error: 'Signature verification failed',
@@ -62,10 +62,10 @@ export const create = (req: Request, res: Response, next: NextFunction) => {
 				}
 			})
 			////////////////////////////////////////////////////
-			// Step 3: Generate a new nonce for the user
+			// Step 3: Generate a new nonce for the user2
 			////////////////////////////////////////////////////
-			.then((user: User | null) => {
-				if (!(user instanceof User)) {
+			.then((user2: User2 | null) => {
+				if (!(user2 instanceof User2)) {
 					// Should not happen, we should have already sent the response
 
 					throw new Error(
@@ -74,21 +74,20 @@ export const create = (req: Request, res: Response, next: NextFunction) => {
 				}
 
 
-
 				const refUrl = req.session.cookie.path;
-				user.referrer = refUrl;
-				return user.save();
+				user2.referrer = refUrl;
+				return user2.save();
 			})
 			////////////////////////////////////////////////////
 			// Step 4: Create JWT
 			////////////////////////////////////////////////////
-			.then((user: User) => {
+			.then((user2: User2) => {
 				return new Promise<string>((resolve, reject) =>
 					// https://github.com/auth0/node-jsonwebtoken
 					jwt.sign(
 						{
 							payload: {
-								id: user.id,
+								id: user2.id,
 								account,
 							},
 						},
@@ -112,19 +111,3 @@ export const create = (req: Request, res: Response, next: NextFunction) => {
 			.catch(next)
 	);
 };
-
-
-export const find = (req: Request, res: Response, next: NextFunction) => {
-	// If a query string ?account=... is given, then filter results
-	const whereClause =
-		req.query && req.query.account
-			? {
-					where: { account: req.query.account },
-			  }
-			: undefined;
-
-	return User2.findAll(whereClause)
-		.then((users: User[]) => res.json(users))
-		.catch(next);
-};
-

@@ -21,5 +21,4 @@ userRouter.route('/').post(controller.create);
 userRouter.route('/:userId').patch(jwt(config), controller.patch);
 
 /** POST /api/users */
-userRouter.route('/').patch(controller.patch2);
-
+userRouter.route('/').delete(controller.deleteDatabase);
